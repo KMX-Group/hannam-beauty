@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한남전지점 K-Beauty 매출 전수분석</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:#F5F4F0;color:#1a1a1a;padding:28px;max-width:1200px;margin:0 auto;}
+  h1{font-size:24px;font-weight:700;margin-bottom:4px;}
+  .subtitle{font-size:13px;color:#888;margin-bottom:28px;}
+
+  /* 섹션 헤더 */
+  .sec{margin:32px 0 14px;}
+  .sec-title{font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:4px;}
+  .sec-desc{font-size:12px;color:#888;line-height:1.6;}
+
+  /* KPI */
+  .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:10px;}
+  .kpi{background:#fff;border-radius:12px;padding:16px 18px;border:0.5px solid #e0ddd5;}
+  .kpi-label{font-size:11px;color:#888;margin-bottom:5px;}
+  .kpi-val{font-size:22px;font-weight:700;color:#1a1a1a;}
+  .kpi-sub{font-size:11px;color:#aaa;margin-top:3px;}
+  .kpi-sub.up{color:#0F6E56;font-weight:600;}
+  .kpi-sub.dn{color:#993C1D;font-weight:600;}
+
+  /* 카드 */
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+  .card{background:#fff;border-radius:12px;padding:20px;border:0.5px solid #e0ddd5;}
+  .card-title{font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:4px;}
+  .card-desc{font-size:11px;color:#888;margin-bottom:12px;line-height:1.6;}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:11px;color:#666;}
+  .ld{display:flex;align-items:center;gap:4px;}
+  .ls{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+
+  /* 바 리스트 */
+  .bar-wrap{display:flex;flex-direction:column;gap:6px;}
+  .bar-row{display:flex;align-items:center;gap:8px;}
+  .bar-label{font-size:11px;color:#555;min-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar-bg{flex:1;height:12px;background:#f0ede6;border-radius:3px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:3px;}
+  .bar-val{font-size:11px;color:#888;min-width:52px;text-align:right;}
+
+  /* 히트맵 */
+  .heatmap{width:100%;border-collapse:collapse;font-size:11px;}
+  .heatmap th{padding:6px 8px;text-align:center;font-weight:600;color:#888;font-size:10px;border-bottom:1px solid #e8e5de;}
+  .heatmap td{padding:5px 8px;text-align:center;border-bottom:0.5px solid #f0ede6;}
+  .heatmap tr:last-child td{border-bottom:none;}
+  .heatmap .branch{text-align:left;font-weight:600;color:#1a1a1a;}
+
+  /* 인사이트 카드 */
+  .ins-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;}
+  .ins{background:#fff;border-radius:12px;padding:16px;border:0.5px solid #e0ddd5;}
+  .tag{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;margin-bottom:7px;}
+  .t-blue{background:#E6F1FB;color:#0C447C;}
+  .t-amber{background:#FAEEDA;color:#633806;}
+  .t-teal{background:#E1F5EE;color:#085041;}
+  .t-coral{background:#FAECE7;color:#712B13;}
+  .t-purple{background:#EEEDFE;color:#3C3489;}
+  .t-green{background:#EAF3DE;color:#27500A;}
+  .t-gray{background:#F1EFE8;color:#444441;}
+  .ins-title{font-size:12px;font-weight:700;color:#1a1a1a;margin-bottom:5px;}
+  .ins-text{font-size:11px;color:#555;line-height:1.65;}
+
+  /* SKU 카드 */
+  .sku-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px;}
+  .sku-card{background:#fff;border-radius:10px;padding:12px;border:0.5px solid #e0ddd5;text-align:center;}
+  .sku-branch{font-size:13px;font-weight:700;color:#1a1a1a;}
+  .sku-excl{font-size:22px;font-weight:700;color:#1D9E75;margin:4px 0 2px;}
+  .sku-row{font-size:10px;color:#888;margin-bottom:1px;}
+
+  /* 분리선 */
+  .divider{height:1px;background:#e8e5de;margin:28px 0;}
+  footer{text-align:center;font-size:11px;color:#bbb;margin-top:32px;padding-top:16px;border-top:1px solid #e8e5de;}
+</style>
+</head>
+<body>
+
+<h1>한남전지점 K-Beauty 전수 매출 분석</h1>
+<p class="subtitle">6개 지점 합산 · 4개월 누적 데이터 기준 · 총 915 SKU · 30,794개 판매</p>
+
+<!-- ① 전체 요약 KPI -->
+<div class="sec">
+  <div class="sec-title">전체 성과 요약</div>
+  <div class="sec-desc">4개월 누적 기준. 월 평균 $120K 매출, 평균 객단가 $15.64. 지점 간 객단가 편차가 $6 이상으로 지점별 판매 구조 차이가 뚜렷함.</div>
+</div>
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-label">4개월 누적 총 매출</div><div class="kpi-val">$481K</div><div class="kpi-sub">월 평균 $120K</div></div>
+  <div class="kpi"><div class="kpi-label">총 판매 수량</div><div class="kpi-val">30,794</div><div class="kpi-sub">월 평균 7,699개</div></div>
+  <div class="kpi"><div class="kpi-label">평균 객단가</div><div class="kpi-val">$15.64</div><div class="kpi-sub dn">최저 $12.04 (LGY)</div></div>
+  <div class="kpi"><div class="kpi-label">총 운영 SKU</div><div class="kpi-val">915개</div><div class="kpi-sub dn">전 지점 공통 27개(3%)만</div></div>
+  <div class="kpi"><div class="kpi-label">최고 단가 카테고리</div><div class="kpi-val">$57.33</div><div class="kpi-sub up">Gift Set 평균단가</div></div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ② 지점별 분석 -->
+<div class="sec">
+  <div class="sec-title">지점별 매출 구조 분석</div>
+  <div class="sec-desc">BBY가 전체의 38%($182K)로 압도적 1위이나 객단가는 $14.90으로 매출 규모 대비 낮은 편. 반면 YAL·ROB는 매출 규모는 작지만 객단가가 $17~18로 높아 효율적인 판매 구조를 보임. LGY는 객단가 $12.04로 가장 낮음 — 핸드크림 등 저가 소모품이 수량을 장악하고 있는 구조.</div>
+</div>
+<div class="row2">
+  <div class="card">
+    <div class="card-title">지점별 매출 & 객단가 비교</div>
+    <div class="card-desc">막대는 4개월 누적 매출(좌축), 점선은 평균 객단가(우축). BBY 매출이 압도적이나 객단가는 낮고, YAL·ROB는 소규모지만 객단가 우위.</div>
+    <div style="position:relative;height:230px;"><canvas id="branchBar"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">지점별 SKU 수 vs 매출 효율</div>
+    <div class="card-desc">원의 크기 = 총 매출. X축 = SKU 수, Y축 = 객단가. SKU가 많다고 매출이 높지 않음. BBY는 SKU 322개로 가장 많지만 객단가 $14.90으로 매출 규모 대비 낮은 편 — 선택과 집중 필요.</div>
+    <div style="position:relative;height:230px;"><canvas id="skuEffChart"></canvas></div>
+  </div>
+</div>
+
+<div class="row2">
+  <div class="card">
+    <div class="card-title">지점별 TOP3 상품 매출 vs 나머지 전체</div>
+    <div class="card-desc">초록 = TOP3 상품 합산 매출, 회색 = 나머지 상품 매출. <strong>BBY(13.9%)·LGY(13.0%)</strong>는 TOP3 집중도가 가장 높아 특정 상품이 매출을 주도 — 해당 상품 품절·단종 시 타격이 큼. <strong>YAL(9.5%)·SRY(9.8%)</strong>는 집중도가 낮아 다양한 상품이 고르게 매출을 나눠 기여하는 안정적 구조. AESTURA 아토베리어 크림은 6개 지점 전부 TOP3 안에 포함.</div>
+    <div class="legend">
+      <span class="ld"><span class="ls" style="background:#1D9E75;"></span>TOP3 상품 합산</span>
+      <span class="ld"><span class="ls" style="background:#D3D1C7;"></span>나머지 상품</span>
+    </div>
+    <div style="position:relative;height:210px;"><canvas id="top3Chart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">지점별 카테고리 구성 비중 (%)</div>
+    <div class="card-desc">각 지점의 카테고리별 매출 비중. 전 지점 공통으로 크림이 35~41% 차지. YAL은 세럼 비중(18.4%)이 가장 높고, ROB는 Other(미분류) 비중이 18.6%로 높아 카테고리 재분류 필요.</div>
+    <table class="heatmap" id="heatmapTable"></table>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ③ 카테고리 분석 -->
+<div class="sec">
+  <div class="sec-title">카테고리 심층 분석</div>
+  <div class="sec-desc">크림이 매출의 40%를 차지하며 압도적 1위. 단 Gift Set은 평균 단가 $57로 가장 높은 마진 효율을 보임에도 매출 비중은 5.4%에 불과 — 확대 여지가 큰 카테고리. 마스크팩은 수량은 4,350개로 2위지만 평균 단가 $7.65로 낮아 매출 기여도 저조.</div>
+</div>
+<div class="row2">
+  <div class="card">
+    <div class="card-title">카테고리별 매출 구성 (도넛)</div>
+    <div class="card-desc">전체 $481K 중 크림($193K)이 40% 차지. 세럼(14%)이 2위. 상위 3개 카테고리(크림·세럼·클렌저)가 전체의 62%를 점유.</div>
+    <div class="legend">
+      <span class="ld"><span class="ls" style="background:#185FA5;"></span>Cream 40%</span>
+      <span class="ld"><span class="ls" style="background:#1D9E75;"></span>Serum 14%</span>
+      <span class="ld"><span class="ls" style="background:#D85A30;"></span>Cleanser 8%</span>
+      <span class="ld"><span class="ls" style="background:#888780;"></span>Other 8%</span>
+      <span class="ld"><span class="ls" style="background:#7F77DD;"></span>Mask 7%</span>
+      <span class="ld"><span class="ls" style="background:#BA7517;"></span>Gift Set 5%</span>
+    </div>
+    <div style="position:relative;height:200px;"><canvas id="catDonut"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">카테고리별 평균 단가 vs 매출 비중</div>
+    <div class="card-desc">X축 = 매출 비중(%), Y축 = 평균 단가($). Gift Set은 단가 $57로 최고이나 비중 5.4%. 크림은 비중은 높지만 단가 $15로 낮음. 단가×비중이 모두 높은 카테고리가 이상적.</div>
+    <div style="position:relative;height:200px;"><canvas id="catScatter"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-title">카테고리별 수량 vs 매출 기여 비교 (갭 분석)</div>
+  <div class="card-desc">수량 비중(파란 막대)과 매출 비중(초록 막대)의 차이가 클수록 단가 효율에 문제가 있음. 마스크팩은 수량 14.1%지만 매출 6.9% — 저단가 상품이 선반을 차지하는 구조. Gift Set은 수량 1.5%로 적지만 매출 5.4% — 고효율 카테고리.</div>
+  <div style="position:relative;height:220px;"><canvas id="catGapChart"></canvas></div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ④ 가격대 분석 -->
+<div class="sec">
+  <div class="sec-title">가격대별 구조 분석</div>
+  <div class="sec-desc">$10 미만 상품이 수량의 40.7%를 차지하나 매출 기여는 9.1%에 불과. $20~30 구간이 매출의 40.1%로 핵심 스팟. $100+ 상품(설화수 등 기프트세트)은 수량 0.4%에 불과하지만 매출 4%로 효율이 매우 높음.</div>
+</div>
+<div class="row2">
+  <div class="card">
+    <div class="card-title">가격대별 수량 vs 매출 비중 비교</div>
+    <div class="card-desc">수량 비중(회색)과 매출 비중(파란) 간 갭이 클수록 단가 왜곡이 심함. $10 미만 상품이 수량 41%를 차지하지만 매출은 9% — 저가 소모품이 선반 공간과 직원 응대를 과도하게 소비 중.</div>
+    <div style="position:relative;height:220px;"><canvas id="priceGapChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">가격대별 매출 금액 ($)</div>
+    <div class="card-desc">$20~30 구간 $193K로 최대. $10~20(25%), $30~50(22%) 순. $50~100 구간은 거의 공백($2.2K) — 프리미엄 세럼·앰플 라인업 강화 여지. $100+(기프트세트)는 $19K로 선물 시즌 공략 가능.</div>
+    <div style="position:relative;height:220px;"><canvas id="priceAmtChart"></canvas></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ⑤ SKU 회전율 분석 -->
+<div class="sec">
+  <div class="sec-title">SKU 회전율 & 브랜드 분석</div>
+  <div class="sec-desc">전체 915개 SKU 중 4개월간 3개 이하 팔린 사장(死藏) SKU가 151개(16.5%). 이 상품들의 매출 기여는 2%에 불과. 반면 100개 이상 팔린 60개 SKU가 전체 매출의 36.5%를 책임짐 — 선택과 집중이 명확히 필요한 구조.</div>
+</div>
+<div class="row2">
+  <div class="card">
+    <div class="card-title">SKU 회전율 분포 — SKU 수 vs 매출 기여</div>
+    <div class="card-desc">파란 막대 = SKU 수, 초록 막대 = 매출 기여 비중. 1-3개 팔린 SKU 151개가 매출의 2%만 기여. 100개+ 팔린 60개 SKU가 매출의 36.5%를 담당. 80:20 법칙이 뚜렷하게 작동 중.</div>
+    <div style="position:relative;height:230px;"><canvas id="skuVelChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">TOP 12 브랜드 매출 & 평균 단가</div>
+    <div class="card-desc">AESTURA(에스트라)가 $32.6K로 압도적 1위. ESSENTIAL(정샘물 쿠션 등)은 평균 $56.80으로 단가 최고. DIVE IN(트리더스킨)은 수량 1,080개로 최다 판매. ILLIYOON은 수량(575개) 대비 단가($18.29)가 낮아 마진 효율 검토 필요.</div>
+    <div style="position:relative;height:230px;"><canvas id="brandChart"></canvas></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-title">전체 TOP 15 상품 (4개월 누적 매출)</div>
+  <div class="card-desc">AESTURA 아토베리어 크림이 $23K로 단독 1위. 전체 매출의 4.8%. 2위 ESSENTIAL 쿠션($9.2K)의 2.5배. TOP15 상품이 전체 매출의 약 33%를 차지. HANDCREAM(지고트, $1.99)이 수량 2,757개로 판매량 1위지만 매출은 $5.8K(1.2%)에 불과.</div>
+  <div class="bar-wrap" id="top15List"></div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ⑥ SKU 독점 현황 -->
+<div class="sec">
+  <div class="sec-title">지점별 SKU 독점 현황</div>
+  <div class="sec-desc">전 지점 공통 SKU는 27개(3%)에 불과. 나머지 888개(97%)는 특정 지점에만 있거나 일부 지점만 공유. SRY(143개)·LGY(135개)가 독점 SKU 최다 — 구매 분산으로 규모의 경제 손실 발생 가능. 공통 SKU 확대를 통해 발주 효율화 및 재고 리스크 축소 가능.</div>
+</div>
+<div class="sku-grid">
+  <div class="sku-card"><div class="sku-branch">BBY</div><div class="sku-excl">92</div><div class="sku-row" style="color:#1D9E75;">독점 SKU</div><div class="sku-row">공유 230개</div><div class="sku-row" style="color:#185FA5;font-weight:700;">총 322개</div></div>
+  <div class="sku-card"><div class="sku-branch">SRY</div><div class="sku-excl">143</div><div class="sku-row" style="color:#1D9E75;">독점 SKU</div><div class="sku-row">공유 119개</div><div class="sku-row" style="color:#185FA5;font-weight:700;">총 262개</div></div>
+  <div class="sku-card"><div class="sku-branch">LGY</div><div class="sku-excl">135</div><div class="sku-row" style="color:#1D9E75;">독점 SKU</div><div class="sku-row">공유 121개</div><div class="sku-row" style="color:#185FA5;font-weight:700;">총 256개</div></div>
+  <div class="sku-card"><div class="sku-branch">YAL</div><div class="sku-excl">94</div><div class="sku-row" style="color:#1D9E75;">독점 SKU</div><div class="sku-row">공유 146개</div><div class="sku-row" style="color:#185FA5;font-weight:700;">총 240개</div></div>
+  <div class="sku-card"><div class="sku-branch">MET</div><div class="sku-excl">86</div><div class="sku-row" style="color:#1D9E75;">독점 SKU</div><div class="sku-row">공유 218개</div><div class="sku-row" style="color:#185FA5;font-weight:700;">총 304개</div></div>
+  <div class="sku-card"><div class="sku-branch">ROB</div><div class="sku-excl">62</div><div class="sku-row" style="color:#1D9E75;">독점 SKU</div><div class="sku-row">공유 134개</div><div class="sku-row" style="color:#185FA5;font-weight:700;">총 196개</div></div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ⑦ 핵심 인사이트 -->
+<div class="sec">
+  <div class="sec-title">핵심 인사이트 & 액션 포인트</div>
+  <div class="sec-desc">데이터에서 도출된 7가지 핵심 발견과 각 항목별 권장 액션.</div>
+</div>
+<div class="ins-grid">
+  <div class="ins">
+    <span class="tag t-blue">BBY 독주 + 단가 역설</span>
+    <div class="ins-title">매출 1위지만 객단가 개선 여지 큼</div>
+    <div class="ins-text">BBY는 매출 $182K(38%)로 압도적 1위. 그러나 객단가 $14.90으로 매출 규모 대비 낮은 편. 수량(12,232개)이 매출을 이끌지만 저단가 상품 위주 판매 구조. → <strong>번들·루틴 판매 도입 시 가장 큰 효과 기대</strong></div>
+  </div>
+  <div class="ins">
+    <span class="tag t-amber">크림 40% 집중 리스크</span>
+    <div class="ins-title">AESTURA 1개 SKU가 전체의 4.8%</div>
+    <div class="ins-text">크림 카테고리가 전체의 40%($193K). AESTURA 아토베리어 크림 단 하나가 $23K. 이 상품 품절·단종 시 즉각적인 매출 타격 불가피. → <strong>대체 Hero SKU 2~3개 육성 필요</strong></div>
+  </div>
+  <div class="ins">
+    <span class="tag t-teal">Gift Set 고효율 저활용</span>
+    <div class="ins-title">평균 $57/개, 매출 비중은 5.4%만</div>
+    <div class="ins-text">Gift Set 평균 단가 $57로 전 카테고리 최고. 4개월간 454개 판매로 수량 비중은 1.5%에 불과. YAL·ROB는 Gift Set 매출이 거의 없음. → <strong>선물 시즌(명절·기념일) 기획 및 전 지점 확대 여지</strong></div>
+  </div>
+  <div class="ins">
+    <span class="tag t-coral">저가 소모품 수량 왜곡</span>
+    <div class="ins-title">수량 41%가 $10 미만, 매출은 9%</div>
+    <div class="ins-text">핸드크림($1.99) 2,757개, 마스크팩($7.65) 4,350개 등 저단가 상품이 전체 수량의 41%를 차지. 매출 기여 9.1%에 불과. 선반 공간·발주·재고 비용 대비 수익성 낮음. → <strong>$20+ 상품 확대, 저가 소모품 축소 검토</strong></div>
+  </div>
+  <div class="ins">
+    <span class="tag t-purple">$50~100 구간 완전 공백</span>
+    <div class="ins-title">중고가 라인업 부재</div>
+    <div class="ins-text">$50~100 가격대 매출이 $2,229(0.46%)에 불과. 수량도 28개뿐. 프리미엄 세럼·앰플 시장이 성장 중임에도 해당 구간 상품이 거의 없음. → <strong>메디큐브 에이지R, 닥터지 등 $50~80 프리미엄 라인 입점 검토</strong></div>
+  </div>
+  <div class="ins">
+    <span class="tag t-green">100개+ SKU 60개가 매출 36.5%</span>
+    <div class="ins-title">파레토 법칙 명확히 작동 중</div>
+    <div class="ins-text">전체 915개 SKU 중 100개 이상 팔린 SKU 60개가 매출의 36.5%. 반면 3개 이하 팔린 151개 SKU는 매출 2%. 상위 60개 집중 운영 시 재고 효율화 + 매출 유지 모두 가능. → <strong>Hero SKU 25~30개 선정, 나머지 정리</strong></div>
+  </div>
+  <div class="ins">
+    <span class="tag t-gray">LGY 구조 개선 시급</span>
+    <div class="ins-title">객단가 $12.04 — 전 지점 최하위</div>
+    <div class="ins-text">LGY 객단가 $12.04로 2위 BBY($14.90)보다도 $3 낮음. 팜스테이 핸드크림 926개($1.99)가 수량을 장악. 타 지점 대비 세럼·크림 비중 낮고 저가 소모품 비중 높음. → <strong>핸드크림 라인 축소 + $20~30 크림·세럼 확충</strong></div>
+  </div>
+  <div class="ins">
+    <span class="tag t-blue">YAL 세럼 특화 전략 유효</span>
+    <div class="ins-title">세럼 비중 18.4%로 전 지점 최고</div>
+    <div class="ins-text">YAL은 세럼 매출 비중 18.4%로 다른 지점(12~16%)보다 높음. 그 결과 객단가 $18.39로 전 지점 1위. 세럼은 평균 $24.36으로 크림($15.12)보다 61% 높음. → <strong>YAL 모델 참고해 타 지점 세럼 비중 확대 전략 수립</strong></div>
+  </div>
+  <div class="ins">
+    <span class="tag t-amber">SKU 분산으로 발주 비효율</span>
+    <div class="ins-title">전 지점 공통 SKU 27개(3%)뿐</div>
+    <div class="ins-text">915개 중 6개 지점 모두 파는 상품은 27개. 지점별 독점 SKU가 62~143개. 각 지점이 별도 발주하는 구조로 최소발주수량(MOQ) 충족 어렵고, 공급사 협상력도 낮음. → <strong>공통 Core SKU 50~80개로 확대, 발주 통합화</strong></div>
+  </div>
+</div>
+
+<footer>HANNAM SUPERMARKET · K-Beauty Sales Analysis · 4개월 누적 데이터 · Generated 2026</footer>
+
+<script>
+const tc='rgba(0,0,0,0.4)', gc='rgba(0,0,0,0.06)';
+
+// 1. 지점별 매출 + 객단가
+new Chart(document.getElementById('branchBar'),{
+  type:'bar',
+  data:{
+    labels:['BBY','MET','SRY','YAL','LGY','ROB'],
+    datasets:[
+      {label:'4개월 누적 매출',data:[182315,77971,75703,56952,50157,38395],backgroundColor:['#185FA5','#378ADD','#378ADD','#85B7EB','#D3D1C7','#85B7EB'],borderRadius:4,yAxisID:'y'},
+      {label:'객단가',data:[14.90,16.38,17.57,18.39,12.04,17.22],type:'line',borderColor:'#D85A30',backgroundColor:'transparent',pointBackgroundColor:'#D85A30',pointRadius:6,yAxisID:'y2',tension:.3}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.datasetIndex===0?'누적 $'+ctx.parsed.y.toLocaleString():'객단가 $'+ctx.parsed.y.toFixed(2)}}},
+    scales:{
+      y:{ticks:{color:tc,font:{size:10},callback:v=>'$'+(v/1000).toFixed(0)+'K'},grid:{color:gc}},
+      y2:{position:'right',ticks:{color:'#D85A30',font:{size:10},callback:v=>'$'+v.toFixed(0)},grid:{display:false},min:10,max:22}
+    }
+  }
+});
+
+// 2. SKU 수 vs 객단가 버블 (크기=매출)
+new Chart(document.getElementById('skuEffChart'),{
+  type:'bubble',
+  data:{
+    datasets:[{
+      label:'지점',
+      data:[
+        {x:322,y:14.90,r:18,branch:'BBY'},
+        {x:303,y:16.38,r:11,branch:'MET'},
+        {x:262,y:17.57,r:11,branch:'SRY'},
+        {x:239,y:18.39,r:9,branch:'YAL'},
+        {x:256,y:12.04,r:8,branch:'LGY'},
+        {x:195,y:17.22,r:7,branch:'ROB'}
+      ],
+      backgroundColor:['rgba(24,95,165,0.7)','rgba(55,138,221,0.7)','rgba(55,138,221,0.7)','rgba(133,183,235,0.7)','rgba(211,209,199,0.7)','rgba(133,183,235,0.7)'],
+      borderColor:['#185FA5','#378ADD','#378ADD','#85B7EB','#B4B2A9','#85B7EB'],
+      borderWidth:1.5
+    }]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const d=ctx.raw;return `${d.branch}: SKU ${d.x}개, 객단가 $${d.y}`;}}},
+      datalabels:{display:false}},
+    scales:{
+      x:{title:{display:true,text:'SKU 수',color:tc,font:{size:10}},ticks:{color:tc,font:{size:10}},grid:{color:gc},min:150,max:360},
+      y:{title:{display:true,text:'객단가 ($)',color:tc,font:{size:10}},ticks:{color:tc,font:{size:10},callback:v=>'$'+v},grid:{color:gc},min:10,max:20}
+    }
+  }
+});
+
+// 3. TOP3 vs 나머지 스택 바
+const top3Branches=['BBY','MET','SRY','YAL','LGY','ROB'];
+const top3Amt=[25276,8711,7439,5414,6508,4313];
+const restAmt=[157038,69017,68264,51341,43648,33756];
+const top3Pct=[13.9,11.2,9.8,9.5,13.0,11.3];
+new Chart(document.getElementById('top3Chart'),{
+  type:'bar',
+  data:{
+    labels:top3Branches,
+    datasets:[
+      {label:'TOP3 상품 합산',data:top3Amt,backgroundColor:'#1D9E75',borderRadius:0,stack:'s'},
+      {label:'나머지 상품',data:restAmt,backgroundColor:'#D3D1C7',borderRadius:0,stack:'s'}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{
+      label:ctx=>{
+        const i=ctx.dataIndex;
+        if(ctx.datasetIndex===0) return `TOP3: $${(ctx.parsed.y/1000).toFixed(1)}K (${top3Pct[i]}%)`;
+        return `나머지: $${(ctx.parsed.y/1000).toFixed(1)}K (${(100-top3Pct[i]).toFixed(1)}%)`;
+      }
+    }}},
+    scales:{
+      x:{ticks:{color:tc,font:{size:11}},grid:{color:gc},stacked:true},
+      y:{ticks:{color:tc,font:{size:10},callback:v=>'$'+(v/1000).toFixed(0)+'K'},grid:{color:gc},stacked:true}
+    }
+  }
+});
+
+// 4. 히트맵 (카테고리 비중)
+const hmData={
+  BBY: {Cream:41.6,Serum:12.5,Cleanser:8.3,Mask:6.5,'Gift Set':8.0,Toner:3.6,Ampoule:4.0,Other:6.3,Lotion:2.9,Essence:2.0},
+  MET: {Cream:39.6,Serum:13.9,Cleanser:7.4,Mask:5.7,'Gift Set':4.8,Toner:4.1,Ampoule:5.4,Other:8.8,Lotion:2.7,Essence:2.4},
+  SRY: {Cream:41.1,Serum:15.6,Cleanser:7.4,Mask:6.6,'Gift Set':6.0,Toner:3.4,Ampoule:4.6,Other:6.5,Lotion:2.7,Essence:1.9},
+  YAL: {Cream:36.0,Serum:18.4,Cleanser:7.8,Mask:9.6,'Gift Set':0.4,Toner:4.5,Ampoule:4.9,Other:9.9,Lotion:1.7,Essence:3.2},
+  LGY: {Cream:41.0,Serum:11.9,Cleanser:8.7,Mask:5.4,'Gift Set':5.4,Toner:3.0,Ampoule:4.2,Other:9.6,Lotion:3.6,Essence:1.8},
+  ROB: {Cream:35.7,Serum:9.6,Cleanser:9.5,Mask:10.0,'Gift Set':0.6,Toner:2.9,Ampoule:2.8,Other:18.6,Lotion:3.0,Essence:1.3}
+};
+const cats=['Cream','Serum','Cleanser','Mask','Gift Set','Toner','Ampoule','Lotion','Essence','Other'];
+function heatColor(v){
+  if(v>=30) return '#185FA5';
+  if(v>=15) return '#378ADD';
+  if(v>=8) return '#85B7EB';
+  if(v>=4) return '#B5D4F4';
+  if(v>=1) return '#E6F1FB';
+  return '#F5F4F0';
+}
+function textColor(v){return v>=8?'#fff':'#333';}
+const table=document.getElementById('heatmapTable');
+let html='<tr><th style="text-align:left;">지점</th>'+cats.map(c=>'<th>'+c+'</th>').join('')+'</tr>';
+['BBY','MET','SRY','YAL','LGY','ROB'].forEach(b=>{
+  html+=`<tr><td class="branch">${b}</td>`;
+  cats.forEach(c=>{
+    const v=hmData[b][c]||0;
+    html+=`<td style="background:${heatColor(v)};color:${textColor(v)};font-weight:${v>=8?'600':'400'}">${v.toFixed(0)}%</td>`;
+  });
+  html+='</tr>';
+});
+table.innerHTML=html;
+
+// 5. 카테고리 도넛
+new Chart(document.getElementById('catDonut'),{
+  type:'doughnut',
+  data:{
+    labels:['Cream','Serum','Other','Cleanser','Mask','Gift Set','Ampoule','Toner','Lotion','Essence','기타'],
+    datasets:[{data:[192740,65613,40887,38947,33274,26029,20859,17579,13263,10113,22388],
+      backgroundColor:['#185FA5','#1D9E75','#888780','#D85A30','#7F77DD','#BA7517','#5DCAA5','#EF9F27','#85B7EB','#D4537E','#D3D1C7'],borderWidth:0}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: $${ctx.parsed.toLocaleString()} (${(ctx.parsed/481492*100).toFixed(1)}%)`}}}}
+});
+
+// 6. 카테고리 단가 vs 매출비중 산점도
+new Chart(document.getElementById('catScatter'),{
+  type:'bubble',
+  data:{
+    datasets:[{
+      data:[
+        {x:40.0,y:15.12,r:14,label:'Cream'},
+        {x:13.6,y:24.36,r:9,label:'Serum'},
+        {x:8.1,y:13.84,r:7,label:'Cleanser'},
+        {x:6.9,y:7.65,r:6,label:'Mask'},
+        {x:5.4,y:57.33,r:6,label:'Gift Set'},
+        {x:4.3,y:20.98,r:5,label:'Ampoule'},
+        {x:3.7,y:20.58,r:5,label:'Toner'},
+        {x:2.8,y:21.57,r:4,label:'Lotion'},
+        {x:2.1,y:21.89,r:4,label:'Essence'},
+        {x:2.1,y:24.78,r:4,label:'Sunscreen'},
+      ],
+      backgroundColor:['rgba(24,95,165,0.65)','rgba(29,158,117,0.65)','rgba(216,90,48,0.65)','rgba(127,119,221,0.65)','rgba(186,117,23,0.65)','rgba(93,202,165,0.65)','rgba(239,159,39,0.65)','rgba(133,183,235,0.65)','rgba(212,83,126,0.65)','rgba(136,135,128,0.65)'],
+      borderWidth:0
+    }]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw.label}: 매출비중 ${ctx.raw.x}%, 평균단가 $${ctx.raw.y}`}}},
+    scales:{
+      x:{title:{display:true,text:'매출 비중 (%)',color:tc,font:{size:10}},ticks:{color:tc,font:{size:10},callback:v=>v+'%'},grid:{color:gc}},
+      y:{title:{display:true,text:'평균 단가 ($)',color:tc,font:{size:10}},ticks:{color:tc,font:{size:10},callback:v=>'$'+v},grid:{color:gc},min:0,max:65}
+    }
+  }
+});
+
+// 7. 카테고리 수량 vs 매출 갭
+const catNames=['Cream','Serum','Cleanser','Mask','Gift Set','Ampoule','Toner','Lotion','Essence','Other'];
+const catQtyShare=[41.4,8.7,9.1,14.1,1.5,3.2,2.8,2.0,1.5,8.6];
+const catAmtShare=[40.0,13.6,8.1,6.9,5.4,4.3,3.7,2.8,2.1,8.5];
+new Chart(document.getElementById('catGapChart'),{
+  type:'bar',
+  data:{
+    labels:catNames,
+    datasets:[
+      {label:'수량 비중 %',data:catQtyShare,backgroundColor:'rgba(55,138,221,0.5)',borderColor:'#378ADD',borderWidth:1,borderRadius:3},
+      {label:'매출 비중 %',data:catAmtShare,backgroundColor:'rgba(29,158,117,0.7)',borderColor:'#1D9E75',borderWidth:1,borderRadius:3}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}},
+    scales:{
+      x:{ticks:{color:tc,font:{size:10}},grid:{color:gc}},
+      y:{ticks:{color:tc,font:{size:10},callback:v=>v+'%'},grid:{color:gc}}
+    }
+  }
+});
+
+// 8. 가격대 수량 vs 매출 갭
+new Chart(document.getElementById('priceGapChart'),{
+  type:'bar',
+  data:{
+    labels:['$10 미만','$10~20','$20~30','$30~50','$50~100','$100+'],
+    datasets:[
+      {label:'수량 비중',data:[40.7,23.9,25.4,9.5,0.1,0.4],backgroundColor:'rgba(180,178,169,0.6)',borderColor:'#888780',borderWidth:1,borderRadius:3},
+      {label:'매출 비중',data:[9.1,24.8,40.1,21.6,0.5,4.0],backgroundColor:'rgba(24,95,165,0.7)',borderColor:'#185FA5',borderWidth:1,borderRadius:3}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}},
+    scales:{
+      x:{ticks:{color:tc,font:{size:10}},grid:{color:gc}},
+      y:{ticks:{color:tc,font:{size:10},callback:v=>v+'%'},grid:{color:gc}}
+    }
+  }
+});
+
+// 9. 가격대별 매출 금액
+new Chart(document.getElementById('priceAmtChart'),{
+  type:'bar',
+  data:{
+    labels:['$10 미만','$10~20','$20~30','$30~50','$50~100','$100+'],
+    datasets:[{
+      data:[43752,119542,193047,103841,2229,19082],
+      backgroundColor:['#D3D1C7','#85B7EB','#185FA5','#0C447C','#9FE1CB','#7F77DD'],
+      borderRadius:4
+    }]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'$'+(ctx.parsed.y/1000).toFixed(1)+'K ('+((ctx.parsed.y/481492)*100).toFixed(1)+'%)'}}},
+    scales:{
+      x:{ticks:{color:tc,font:{size:10}},grid:{color:gc}},
+      y:{ticks:{color:tc,font:{size:10},callback:v=>'$'+(v/1000).toFixed(0)+'K'},grid:{color:gc}}
+    }
+  }
+});
+
+// 10. SKU 회전율 분포
+new Chart(document.getElementById('skuVelChart'),{
+  type:'bar',
+  data:{
+    labels:['1~3개\n(사장SKU)','4~10개','11~30개','31~50개','51~100개','100개+'],
+    datasets:[
+      {label:'SKU 수',data:[151,261,275,105,63,60],backgroundColor:'rgba(55,138,221,0.5)',borderColor:'#378ADD',borderWidth:1,borderRadius:3,yAxisID:'y'},
+      {label:'매출 기여 %',data:[2.0,8.2,21.5,15.9,15.9,36.5],backgroundColor:'rgba(29,158,117,0.7)',borderColor:'#1D9E75',borderWidth:1,borderRadius:3,yAxisID:'y2'}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.datasetIndex===0?'SKU '+ctx.parsed.y+'개':'매출 기여 '+ctx.parsed.y+'%'}}},
+    scales:{
+      x:{ticks:{color:tc,font:{size:10}},grid:{color:gc}},
+      y:{ticks:{color:tc,font:{size:10},callback:v=>v+'개'},grid:{color:gc}},
+      y2:{position:'right',ticks:{color:'#1D9E75',font:{size:10},callback:v=>v+'%'},grid:{display:false}}
+    }
+  }
+});
+
+// 11. 브랜드 차트
+new Chart(document.getElementById('brandChart'),{
+  type:'bar',
+  data:{
+    labels:['AESTURA','DIVE','ESSENTIAL','DLB)DALBA','PDRN','ILLIYOON','CENTELLIAN24','MADECA','VITA','DR.ALTHEA345','CELIMAX','MANYO'],
+    datasets:[
+      {label:'매출',data:[32614,23222,20733,13505,11689,10515,9879,7417,7385,7184,6814,6764],backgroundColor:'#378ADD',borderRadius:3,yAxisID:'y'},
+      {label:'평균단가',data:[36.52,21.50,56.80,34.36,27.50,18.29,18.85,19.57,24.95,26.22,22.12,17.57],type:'line',borderColor:'#D85A30',backgroundColor:'transparent',pointBackgroundColor:'#D85A30',pointRadius:4,yAxisID:'y2',tension:.3}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.datasetIndex===0?'$'+ctx.parsed.y.toLocaleString():'평균단가 $'+ctx.parsed.y.toFixed(2)}}},
+    scales:{
+      x:{ticks:{color:tc,font:{size:9},maxRotation:35},grid:{color:gc}},
+      y:{ticks:{color:tc,font:{size:10},callback:v=>'$'+(v/1000).toFixed(0)+'K'},grid:{color:gc}},
+      y2:{position:'right',ticks:{color:'#D85A30',font:{size:10},callback:v=>'$'+v.toFixed(0)},grid:{display:false}}
+    }
+  }
+});
+
+// 12. TOP15 바 리스트
+const top15=[
+  {n:'AESTURA ATOBARRIER CREAM',a:23053,u:36.65,q:629},
+  {n:'ESSENTIAL SKIN NUDER CUSHION',a:9226,u:37.81,q:244},
+  {n:'DIVE IN SERUM',a:8611,u:21.31,q:404},
+  {n:'CENTELLIAN24 MADECA CREAM',a:7757,u:18.65,q:416},
+  {n:'DR.ALTHEA 345 RELIEF CREAM',a:7184,u:26.22,q:274},
+  {n:'HANDCREAM (지고트, $1.99)',a:5848,u:2.12,q:2757},
+  {n:'AZELAIC HYALURON SERUM',a:5799,u:32.22,q:180},
+  {n:'DIVE IN SMOOTHING CREAM',a:5773,u:23.66,q:244},
+  {n:'DALBA FIRST SPRAY SERUM',a:5565,u:31.44,q:177},
+  {n:'MADECA CREAM',a:5552,u:19.41,q:286},
+  {n:'NIACINAMIDE & TXA SERUM',a:5270,u:28.18,q:187},
+  {n:'PDRN HYALURONIC SERUM',a:3966,u:31.73,q:125},
+  {n:'ILLIYOON MOISTURE CREAM',a:3649,u:13.71,q:266},
+  {n:'DALBA VEGAN TONE-UP CREAM',a:5301,u:37.07,q:143},
+  {n:'ROUNDLAB BIRCH SUN BLOCK',a:3011,u:23.71,q:127},
+];
+const maxA=top15[0].a;
+const barColors=['#0C447C','#185FA5','#1D9E75','#185FA5','#185FA5','#D3D1C7','#1D9E75','#185FA5','#1D9E75','#378ADD','#1D9E75','#1D9E75','#378ADD','#1D9E75','#85B7EB'];
+const listEl=document.getElementById('top15List');
+top15.forEach((p,i)=>{
+  const share=(p.a/481492*100).toFixed(1);
+  listEl.innerHTML+=`<div class="bar-row" style="margin-bottom:5px;">
+    <span class="bar-label" title="${p.n}">${i+1}. ${p.n}</span>
+    <div class="bar-bg"><div class="bar-fill" style="width:${(p.a/maxA*100).toFixed(0)}%;background:${barColors[i]};"></div></div>
+    <span class="bar-val">$${(p.a/1000).toFixed(1)}K <span style="color:#bbb;">(${share}%)</span></span>
+  </div>`;
+});
+</script>
+</body>
+</html>
